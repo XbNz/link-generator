@@ -19,6 +19,7 @@ class AppServiceProvider extends ServiceProvider
             SkyScannerQuestionnaire::class,
         ], 'flight-engine-questionnaires');
 
+
         $this->app->when(FlightLinksCommand::class)
             ->needs('$flightEngineQuestionnaires')
             ->giveTagged('flight-engine-questionnaires');

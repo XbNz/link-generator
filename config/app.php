@@ -70,4 +70,5 @@ return [
         App\Providers\AppServiceProvider::class,
     ],
 
+    'locale' => env('APP_LOCALE', 'en-US'),
 ];

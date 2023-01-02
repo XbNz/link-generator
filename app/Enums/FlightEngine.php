@@ -2,8 +2,18 @@
 
 namespace App\Enums;
 
-use App\Momondo;
-use App\SkyScanner;
+use App\Pipelines\FlightEngines\SkyScanner\Airlines;
+use App\Pipelines\FlightEngines\SkyScanner\Alternatives;
+use App\Pipelines\FlightEngines\SkyScanner\CabinClass;
+use App\Pipelines\FlightEngines\SkyScanner\ConfigureUriStructure;
+use App\Pipelines\FlightEngines\SkyScanner\DepartureDate;
+use App\Pipelines\FlightEngines\SkyScanner\Destination;
+use App\Pipelines\FlightEngines\SkyScanner\Duration;
+use App\Pipelines\FlightEngines\SkyScanner\Localization;
+use App\Pipelines\FlightEngines\SkyScanner\Origin;
+use App\Pipelines\FlightEngines\SkyScanner\Passengers;
+use App\Pipelines\FlightEngines\SkyScanner\ReturnDate;
+use App\Pipelines\FlightEngines\SkyScanner\Stopovers;
 use League\Pipeline\Pipeline;
 use League\Pipeline\PipelineBuilder;
 
@@ -20,21 +30,24 @@ enum FlightEngine: string
         };
     }
 
-    public function pipes(): Pipeline
+    public function pipes(): array
     {
         return match ($this) {
-            self::SkyScanner => (new PipelineBuilder())
-                ->add(new SkyScanner\DepartureDatePipe())
-                ->add(new SkyScanner\DepartureAirportPipe())
-                ->add(new SkyScanner\DestinationAirportPipe())
-                ->add(new SkyScanner\DestinationDatePipe())
-                ->build(),
-            self::Momondo => (new PipelineBuilder())
-                ->add(new Momondo\DepartureDatePipe())
-                ->add(new Momondo\DepartureAirportPipe())
-                ->add(new Momondo\DestinationAirportPipe())
-                ->add(new Momondo\DestinationDatePipe())
-                ->build(),
+            self::SkyScanner => [
+                ConfigureUriStructure::class,
+                Origin::class,
+                Destination::class,
+                DepartureDate::class,
+                ReturnDate::class,
+                Passengers::class,
+                Stopovers::class,
+                CabinClass::class,
+                Duration::class,
+                Airlines::class,
+                Alternatives::class,
+                Localization::class
+            ],
+            self::Momondo => []
         };
     }
 }

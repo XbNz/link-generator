@@ -5,15 +5,18 @@ namespace App\Commands;
 use App\Commands\Questionnaires\DateQuestionnaire;
 use App\Commands\Questionnaires\FlightEngines\FlightEngineQuestionnaireContract;
 use App\Enums\FlightEngine;
+use App\Enums\Market;
 use App\PeriodBuilder;
+use App\Pipelines\FlightEngines\FlightWrapper;
 use App\ValueObjects\DatePair;
 use Carbon\Carbon;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonPeriod;
+use GuzzleHttp\Psr7\Uri;
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Pipeline\Pipeline;
 use Illuminate\Support\Collection;
 use LaravelZero\Framework\Commands\Command;
-use League\Pipeline\Pipeline;
 
 class FlightLinksCommand extends Command
 {
@@ -86,13 +89,14 @@ class FlightLinksCommand extends Command
             $minimumStay = $dateQuestionnaire->validInterval('What is your minimum stay?');
             $maximumStay = $dateQuestionnaire->validInterval('What is your maximum stay?');
 
-            $datePairs = Collection::make($departurePeriodBuilder->get())
+            $dates = Collection::make($departurePeriodBuilder->get())
                 ->map(function (Carbon $departure) use ($returnPeriodBuilder, $minimumStay, $maximumStay, $flightEngine) {
                     return Collection::make($returnPeriodBuilder->get())
                         ->reject(fn(Carbon $return) => $return->lessThan($departure->copy()->add($minimumStay)))
                         ->reject(fn(Carbon $return) => $return->greaterThan($departure->copy()->add($maximumStay)))
                         ->map(fn(Carbon $return) => new DatePair(new CarbonImmutable($departure), new CarbonImmutable($return)));
-                });
+                })
+                ->flatten(1);
         }
 
         if ($isRoundTrip === false) {
@@ -104,6 +108,29 @@ class FlightLinksCommand extends Command
             ->sole(fn(FlightEngineQuestionnaireContract $questionnaire) => $questionnaire->supports($flightEngine));
 
         $flightEngineData = ($flightEngineQuestionnaire)($this);
+
+        foreach ($flightEngineData->markets() as $market) {
+            foreach ($dates as $date) {
+                foreach ($flightEngineData->origins() as $origin) {
+                    foreach ($flightEngineData->destinations() as $destination) {
+                        $flightWrapper = new FlightWrapper(
+                            $flightEngineData,
+                            $date,
+                            $market,
+                            $origin,
+                            $destination,
+                            new Uri()
+                        );
+
+                        $flightWrapper = $pipeline->send($flightWrapper)
+                            ->through($flightEngine->pipes())
+                            ->thenReturn();
+
+                        $this->info((string) $flightWrapper->carry);
+                    }
+                }
+            }
+        }
     }
 
     private function generateLink()
