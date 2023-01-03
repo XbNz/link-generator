@@ -18,10 +18,6 @@ class Destination
     {
         Assert::isInstanceOf($payload, FlightWrapper::class);
 
-        if (! $payload->dates instanceof DatePair) {
-            return $next($payload);
-        }
-
         $payload->carry = $payload->carry->withPath($payload->carry->getPath() . '/' . $payload->destination);
 
         return $next($payload);
