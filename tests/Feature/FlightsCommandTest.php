@@ -2,194 +2,118 @@
 
 namespace Tests\Feature;
 
+use App\Enums\Cabin;
+use App\Enums\Market;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\File;
 use Tests\TestCase;
 
 class FlightsCommandTest extends TestCase
 {
     /** @test **/
-    public function happy_path(): void
+    public function happy_path_skyscanner(): void
     {
+        $file = tmpfile();
+
         $this->artisan('generate:flights')
-            ->expectsChoice('What website should I generate links for?', 'Skyscanner', ['Skyscanner', 'Momondo'])
-            ->expectsQuestion('Departure date (beginning of range)', 'Jan 4')
-            ->expectsQuestion('Departure date (end of range)', 'Jan 11')
-            ->expectsConfirmation('Would you like to exclude any days of the week from your range?', 'yes')
+            ->expectsChoice('What website should I generate links for?', 'skyscanner', ['skyscanner', 'momondo'])
+                ->expectsQuestion('Departure date (beginning of range)', 'Jan 1, 2023')
+            ->expectsQuestion('Departure date (end of range)', 'Jan 2, 2023')
             ->expectsChoice(
                 'Which days would you like to exclude?',
-                ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
-                ['Monday', 'Tuesday', 'Wednesday']
+                ['Sunday'],
+                ['None', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
             )
             ->expectsConfirmation('Is this a round trip?', 'yes')
-            ->expectsQuestion('Return date (beginning of range)', 'Jan 18')
-            ->expectsQuestion('Return date (end of range)', 'Jan 25')
-            ->expectsConfirmation('Would you like to exclude any days of the week from your range?', 'yes')
+            ->expectsQuestion('Return date (beginning of range)', 'Jan 5, 2023')
+            ->expectsQuestion('Return date (end of range)', 'Jan 12, 2023')
             ->expectsChoice(
                 'Which days would you like to exclude?',
-                ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
-                ['Monday', 'Tuesday', 'Wednesday']
+                ['Thursday'],
+                ['None', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
             )
-            ->expectsQuestion('What is your minimum stay?', 3)
-            ->expectsQuestion('What is your maximum stay?', 10)
+            ->expectsQuestion('What is your minimum stay?', '9 days')
+            ->expectsQuestion('What is your maximum stay?', '10 days')
 
             // Engine-specific questions
 
-            ->expectsQuestion('What are the origin airports? (e.g. LHR, JFK, DFW)', 'LHR')
-            ->expectsQuestion('What are the destination airports?', 'LAX, YYZ')
-            ->expectsChoice('Would you like to exclude or explicitly include any airlines in your search?', 'exclude', ['exclude', 'include', 'none'])
-            ->expectsQuestion('Which airlines? (e.g. British Airways, Emirates) ', 'British Airways, Emirates')
-            ->expectsQuestion('How many adults?', 2)
-            ->expectsQuestion('How many children?', 1)
-            ->expectsQuestion('How many infants?', 0)
-            ->expectsChoice('Cabin class', 'Economy', ['Economy', 'Premium Economy', 'Business', 'First'])
-            ->expectsQuestion('Maximum stopovers', 1)
-            ->expectsQuestion('Maximum duration', '25 hours')
-            ->expectsChoice('What markets would you like links for?', 'Random', [
-                'Random',
-                'High GDP',
-                'Medium GDP',
-                'Scandinavia (op af)',
-            ])
-            ->expectsQuestion('Market limit (higher = more links)', 10)
-            ->expectsQuestion('Currency', 'CAD');
+            ->expectsQuestion('What are the origin airports? (e.g. LHR, JFK, DFW)', 'FRA, AMS')
+            ->expectsQuestion('What are the destination airports?', 'LAX, SFO')
+            ->expectsConfirmation('Do you want to include specific airlines?', 'yes')
+            ->expectsQuestion('Which airlines? (e.g. -32456 = Cathay Pacific)', '-32456, -12345')
+            ->expectsQuestion('How many adults?', '1')
+            ->expectsQuestion('How many children?', '1')
+            ->expectsQuestion('How many infants?', '1')
+            ->expectsQuestion('Maximum stopovers', '1')
+            ->expectsQuestion('Maximum duration of entire trip', '25 hours')
+            ->expectsConfirmation('Include alternative airports', 'yes')
+            ->expectsChoice('Cabin class', 'economy', Collection::make(Cabin::cases())
+                ->map(fn(Cabin $cabin) => $cabin->value)->toArray())
+            ->expectsChoice('What markets would you like links for?', 'scandinavia', Collection::make(Market::cases())
+                ->map(fn(Market $market) => $market->value)->toArray())
+            ->expectsQuestion('Market limit (higher = more links)', '5')
+            ->expectsConfirmation('Would you like to specify custom markets? (e.g. US, UK, DE)', 'yes')
+                ->expectsQuestion('Which markets?', 'US, DE, UK')
+            ->expectsQuestion('Currency', 'CAD')
+            ->expectsQuestion("Provide a fully qualified path to a file you'd like to save the links to", stream_get_meta_data($file)['uri'])
+            ->expectsOutputToContain('Generated 32 links')
+            ->expectsOutputToContain('fra/lax')
+            ->expectsOutputToContain('fra/sfo')
+            ->expectsOutputToContain('ams/lax')
+            ->expectsOutputToContain('ams/sfo');
+
+        $contentCollection = File::lines(stream_get_meta_data($file)['uri']);
+
+        $this->assertEquals(33, $contentCollection->count());
     }
 
     /** @test **/
-    public function if_not_round_trip_return_date_prompts_should_not_be_shown(): void
+    public function happy_path_skyscanner_one_way(): void
     {
-        // Arrange
+        $file = tmpfile();
 
-        // Act
+        $this->artisan('generate:flights')
+            ->expectsChoice('What website should I generate links for?', 'skyscanner', ['skyscanner', 'momondo'])
+            ->expectsQuestion('Departure date (beginning of range)', 'Jan 1, 2023')
+            ->expectsQuestion('Departure date (end of range)', 'Jan 2, 2023')
+            ->expectsChoice(
+                'Which days would you like to exclude?',
+                ['Sunday'],
+                ['None', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+            )
+            ->expectsConfirmation('Is this a round trip?', 'no')
 
-        // Assert
+            // Engine-specific questions
+
+            ->expectsQuestion('What are the origin airports? (e.g. LHR, JFK, DFW)', 'FRA, AMS')
+            ->expectsQuestion('What are the destination airports?', 'LAX, SFO')
+            ->expectsConfirmation('Do you want to include specific airlines?', 'no')
+            ->expectsQuestion('How many adults?', '1')
+            ->expectsQuestion('How many children?', '1')
+            ->expectsQuestion('How many infants?', '1')
+            ->expectsQuestion('Maximum stopovers', '1')
+            ->expectsQuestion('Maximum duration of entire trip', '25 hours')
+            ->expectsConfirmation('Include alternative airports', 'yes')
+            ->expectsChoice('Cabin class', 'economy', Collection::make(Cabin::cases())
+                ->map(fn(Cabin $cabin) => $cabin->value)->toArray())
+            ->expectsChoice('What markets would you like links for?', 'scandinavia', Collection::make(Market::cases())
+                ->map(fn(Market $market) => $market->value)->toArray())
+            ->expectsQuestion('Market limit (higher = more links)', '5')
+            ->expectsConfirmation('Would you like to specify custom markets? (e.g. US, UK, DE)', 'yes')
+            ->expectsQuestion('Which markets?', 'US, DE, UK')
+            ->expectsQuestion('Currency', 'CAD')
+            ->expectsQuestion("Provide a fully qualified path to a file you'd like to save the links to", stream_get_meta_data($file)['uri'])
+            ->expectsOutputToContain('Generated 32 links')
+            ->expectsOutputToContain('fra/lax')
+            ->expectsOutputToContain('fra/sfo')
+            ->expectsOutputToContain('ams/lax')
+            ->expectsOutputToContain('ams/sfo');
+
+        $contentCollection = File::lines(stream_get_meta_data($file)['uri']);
+
+        $this->assertEquals(33, $contentCollection->count());
     }
 
-    /** @test **/
-    public function non_resultant_airline_search_should_throw_an_error_code_1(): void
-    {
-        // Arrange
 
-        // Act
-
-        // Assert
-    }
-
-    /** @test **/
-    public function if_no_airline_exclusion_is_desired_by_user_then_the_airlines_prompt_should_not_be_shown(): void
-    {
-        // Arrange
-
-        // Act
-
-        // Assert
-    }
-
-    /** @test **/
-    public function if_adults_value_is_non_numeric_it_should_throw_an_error_code_1(): void
-    {
-        // Arrange
-
-        // Act
-
-        // Assert
-    }
-
-    /** @test **/
-    public function if_children_value_is_non_numeric_it_should_throw_an_error_code_1(): void
-    {
-        // Arrange
-
-        // Act
-
-        // Assert
-    }
-
-    /** @test **/
-    public function if_infants_value_is_non_numeric_it_should_throw_an_error_code_1(): void
-    {
-        // Arrange
-
-        // Act
-
-        // Assert
-    }
-
-    /** @test **/
-    public function if_stopovers_value_is_non_numeric_it_should_throw_an_error_code_1(): void
-    {
-        // Arrange
-
-        // Act
-
-        // Assert
-    }
-
-    /** @test **/
-    public function if_duration_value_is_non_numeric_it_should_throw_an_error_code_1(): void
-    {
-        // Arrange
-
-        // Act
-
-        // Assert
-    }
-
-    /** @test **/
-    public function if_market_limit_value_is_non_numeric_it_should_throw_an_error_code_1(): void
-    {
-        // Arrange
-
-        // Act
-
-        // Assert
-    }
-
-    /** @test **/
-    public function if_currency_value_is_non_existent_it_should_throw_an_error_code_1(): void
-    {
-        // Arrange
-
-        // Act
-
-        // Assert
-    }
-
-    /** @test **/
-    public function minimum_and_maximum_stay_prompts_are_not_shown_if_the_flight_is_one_way(): void
-    {
-        // Arrange
-
-        // Act
-
-        // Assert
-    }
-
-    /** @test **/
-    public function if_minimum_stay_value_is_non_numeric_it_should_throw_an_error_code_1(): void
-    {
-        // Arrange
-
-        // Act
-
-        // Assert
-    }
-
-    /** @test **/
-    public function if_maximum_stay_value_is_non_numeric_it_should_throw_an_error_code_1(): void
-    {
-        // Arrange
-
-        // Act
-
-        // Assert
-    }
-
-    /** @test **/
-    public function if_minimum_stay_value_is_greater_than_maximum_stay_value_it_should_throw_an_error_code_1(): void
-    {
-        // Arrange
-
-        // Act
-
-        // Assert
-    }
 }

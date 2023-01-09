@@ -47,12 +47,13 @@ class SkyScannerQuestionnaire implements FlightEngineQuestionnaireContract
             Market::Random->value,
         ));
 
+        $marketLimit = $this->getMarketLimit($command);
         $wantsCustomMarket = $command->confirm('Would you like to specify custom markets? (e.g. US, UK, DE)', false);
         $customMarkets = $wantsCustomMarket ? $this->getCustomMarkets($command) : [];
-        $allMarkets = Collection::make($market->iso2())
+
+        $allMarkets = Collection::make($market->iso2($marketLimit))
             ->merge($customMarkets)
             ->unique();
-        $marketLimit = $this->getMarketLimit($command, $allMarkets);
 
         $currency = $this->getCurrency($command);
 
@@ -125,8 +126,6 @@ class SkyScannerQuestionnaire implements FlightEngineQuestionnaireContract
         return $airlines;
     }
 
-    // same thing fro adults, children, infants
-
     private function getAdults(Command $command): int
     {
         $adults = $command->ask('How many adults?', '1');
@@ -187,12 +186,12 @@ class SkyScannerQuestionnaire implements FlightEngineQuestionnaireContract
         return $customMarkets;
     }
 
-    private function getMarketLimit(Command $command, Collection $allMarkets): int
+    private function getMarketLimit(Command $command): int
     {
         $marketLimit = $command->ask('Market limit (higher = more links)', '5');
 
-        while (!is_numeric($marketLimit) || $allMarkets->count() < $marketLimit) {
-            return $this->getMarketLimit($command, $allMarkets);
+        while (!is_numeric($marketLimit)) {
+            return $this->getMarketLimit($command);
         }
 
         return (int) $marketLimit;

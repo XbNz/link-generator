@@ -16,6 +16,8 @@ use GuzzleHttp\Psr7\Uri;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Pipeline\Pipeline;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Storage;
 use LaravelZero\Framework\Commands\Command;
 
 class FlightLinksCommand extends Command
@@ -57,8 +59,8 @@ class FlightLinksCommand extends Command
         ));
 
         $dateQuestionnaire = new DateQuestionnaire($this);
-        $departureRangeA = $dateQuestionnaire->validDate('Departure date (beginning of range');
-        $departureRangeB = $dateQuestionnaire->validDate('Departure date (end of range');
+        $departureRangeA = $dateQuestionnaire->validDate('Departure date (beginning of range)');
+        $departureRangeB = $dateQuestionnaire->validDate('Departure date (end of range)');
 
         $departurePeriodBuilder = PeriodBuilder::query(CarbonPeriod::between($departureRangeA, $departureRangeB));
 
@@ -73,8 +75,8 @@ class FlightLinksCommand extends Command
         $isRoundTrip = $this->confirm('Is this a round trip?', true);
 
         if ($isRoundTrip === true) {
-            $returnRangeA = $dateQuestionnaire->validDate('Return date (beginning of range');
-            $returnRangeB = $dateQuestionnaire->validDate('Return date (end of range');
+            $returnRangeA = $dateQuestionnaire->validDate('Return date (beginning of range)');
+            $returnRangeB = $dateQuestionnaire->validDate('Return date (end of range)');
 
             $returnPeriodBuilder = PeriodBuilder::query(CarbonPeriod::between($returnRangeA, $returnRangeB));
 
@@ -109,6 +111,14 @@ class FlightLinksCommand extends Command
 
         $flightEngineData = ($flightEngineQuestionnaire)($this);
 
+        $counter = 0;
+
+        $default = __DIR__ . '/flights.txt';
+        $path = $this->ask("Provide a fully qualified path to a file you'd like to save the links to", $default);
+
+        File::exists($path) && File::delete($path);
+        File::put($path, '');
+
         foreach ($flightEngineData->markets() as $market) {
             foreach ($dates as $date) {
                 foreach ($flightEngineData->origins() as $origin) {
@@ -127,10 +137,14 @@ class FlightLinksCommand extends Command
                             ->thenReturn();
 
                         $this->info((string) $flightWrapper->carry);
+                        File::append($path, (string) $flightWrapper->carry . PHP_EOL);
+                        $counter++;
                     }
                 }
             }
         }
+
+        $this->info("Generated {$counter} links");
     }
 
     private function generateLink()
