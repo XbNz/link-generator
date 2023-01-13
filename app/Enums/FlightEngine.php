@@ -30,6 +30,9 @@ enum FlightEngine: string
         };
     }
 
+    /**
+     * @return array<int, class-string>
+     */
     public function pipes(): array
     {
         return match ($this) {

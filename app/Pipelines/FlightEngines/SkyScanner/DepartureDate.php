@@ -14,7 +14,7 @@ class DepartureDate
     /**
      * @param FlightWrapper $payload
      */
-    public function __invoke($payload, Closure $next)
+    public function __invoke($payload, Closure $next): mixed
     {
         Assert::isInstanceOf($payload, FlightWrapper::class);
 

@@ -1,15 +1,14 @@
 <?php
 
-namespace Tests\Feature;
+namespace Tests\Feature\Flights;
 
 use App\Enums\Cabin;
 use App\Enums\Market;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
 use Tests\TestCase;
 
-class FlightsCommandTest extends TestCase
+class SkyScanner extends TestCase
 {
     /** @test **/
     public function happy_path_skyscanner(): void

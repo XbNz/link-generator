@@ -92,7 +92,7 @@ class FlightLinksCommand extends Command
             $maximumStay = $dateQuestionnaire->validInterval('What is your maximum stay?');
 
             $dates = Collection::make($departurePeriodBuilder->get())
-                ->map(function (Carbon $departure) use ($returnPeriodBuilder, $minimumStay, $maximumStay, $flightEngine) {
+                ->map(function (Carbon $departure) use ($returnPeriodBuilder, $minimumStay, $maximumStay) {
                     return Collection::make($returnPeriodBuilder->get())
                         ->reject(fn(Carbon $return) => $return->lessThan($departure->copy()->add($minimumStay)))
                         ->reject(fn(Carbon $return) => $return->greaterThan($departure->copy()->add($maximumStay)))
@@ -145,11 +145,6 @@ class FlightLinksCommand extends Command
         }
 
         $this->info("Generated {$counter} links");
-    }
-
-    private function generateLink()
-    {
-
     }
 
     /**

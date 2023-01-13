@@ -27,6 +27,7 @@
         "laravel/pint": "^1.2",
         "mockery/mockery": "^1.4.4",
         "pestphp/pest": "^1.21.3",
+        "phpstan/extension-installer": "^1.2",
         "phpstan/phpstan": "^1.9"
     },
     "autoload": {
@@ -46,7 +47,8 @@
         "sort-packages": true,
         "optimize-autoloader": true,
         "allow-plugins": {
-            "pestphp/pest-plugin": true
+            "pestphp/pest-plugin": true,
+            "phpstan/extension-installer": true
         }
     },
     "minimum-stability": "dev",
