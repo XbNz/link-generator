@@ -36,6 +36,7 @@ enum Market: string
         return Collection::make(iterator_to_array($codes))
             ->random($limit)
             ->map(fn(array $country) => $country['alpha2'])
+            ->map(fn(string $code) => strtolower($code))
             ->values();
     }
 
@@ -103,7 +104,8 @@ enum Market: string
             ->whereIn('alpha2', $richCountries)
             ->random($limit)
             ->values()
-            ->map(fn(array $country) => $country['alpha2']);
+            ->map(fn(array $country) => $country['alpha2'])
+            ->map(fn(string $code) => strtolower($code));
     }
 
     /**
@@ -170,7 +172,8 @@ enum Market: string
             ->whereIn('alpha2', $poorCountries)
             ->random($limit)
             ->values()
-            ->map(fn(array $country) => $country['alpha2']);
+            ->map(fn(array $country) => $country['alpha2'])
+            ->map(fn(string $code) => strtolower($code));
     }
 
     /**
@@ -192,6 +195,7 @@ enum Market: string
             ->whereIn('alpha2', $scandinavianCountries)
             ->random($limit)
             ->values()
-            ->map(fn(array $country) => $country['alpha2']);
+            ->map(fn(array $country) => $country['alpha2'])
+            ->map(fn(string $code) => strtolower($code));
     }
 }

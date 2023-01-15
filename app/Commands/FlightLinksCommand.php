@@ -72,6 +72,11 @@ class FlightLinksCommand extends Command
 
         $departurePeriodBuilder = $departurePeriodBuilder->withoutDays(...$daysOfWeekToExclude);
 
+        $this->table(['Date', 'Day'], Collection::make($departurePeriodBuilder->get())->map(fn(Carbon $date) => [
+            $date->format('Y-m-d'),
+            $date->englishDayOfWeek,
+        ])->toArray());
+
         $isRoundTrip = $this->confirm('Is this a round trip?', true);
 
         if ($isRoundTrip === true) {
@@ -87,6 +92,11 @@ class FlightLinksCommand extends Command
             );
 
             $returnPeriodBuilder = $returnPeriodBuilder->withoutDays(...$daysOfWeekToExclude);
+
+            $this->table(['Date', 'Day'], Collection::make($returnPeriodBuilder->get())->map(fn(Carbon $date) => [
+                $date->format('Y-m-d'),
+                $date->englishDayOfWeek,
+            ])->toArray());
 
             $minimumStay = $dateQuestionnaire->validInterval('What is your minimum stay?');
             $maximumStay = $dateQuestionnaire->validInterval('What is your maximum stay?');
