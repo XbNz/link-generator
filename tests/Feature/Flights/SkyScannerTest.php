@@ -8,7 +8,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\File;
 use Tests\TestCase;
 
-class SkyScanner extends TestCase
+class SkyScannerTest extends TestCase
 {
     /** @test **/
     public function happy_path_skyscanner(): void

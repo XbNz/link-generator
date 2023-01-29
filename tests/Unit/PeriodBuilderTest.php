@@ -10,17 +10,6 @@ use PHPUnit\Framework\TestCase;
 
 class PeriodBuilderTest extends TestCase
 {
-
-    /** @test **/
-    public function example_2(): void
-    {
-        // Arrange
-        dd(\App\Enums\Market::Scandinavia->iso2(5));
-
-        // Act
-
-        // Assert
-    }
     /**
      * @test
      * @dataProvider dayProvider
